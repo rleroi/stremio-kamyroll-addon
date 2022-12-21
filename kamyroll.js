@@ -1,10 +1,15 @@
 import axios from 'axios';
+import localeEmoji from 'locale-emoji';
 
-const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
 const DEVICE_TYPE = 'com.service.data';
 const DEVICE_ID = 'whatvalueshouldbeforweb';
 const STREAM_TYPE = 'adaptive_hls';
-const SUBTITLE_FORMAT = 'srt';
+const SUBTITLE_FORMAT = 'vtt'; // ass, vtt, srt
+const LOCALES = {
+    'es-419': '🇪🇸 (LatAm)',
+    'ar-ME': '🇲🇦 ar-MA',
+    'uk-UK': '🇺🇦 uk-UA',
+};
 
 export default {
     bearerToken: null,
@@ -43,7 +48,7 @@ export default {
         try {
             res = await axios.post('https://api.kamyroll.tech/auth/v1/token',
                 {
-                    "access_token": ACCESS_TOKEN,
+                    "access_token": process.env.ACCESS_TOKEN,
                     "device_type": DEVICE_TYPE,
                     "device_id": DEVICE_ID,
                 }, {
@@ -51,7 +56,7 @@ export default {
                 },
             );
         } catch(e) {
-            console.error(e.message);
+            console.error('Failed to get token: ' + e.message);
             console.log(e.response.data);
 
             return;
@@ -89,7 +94,7 @@ export default {
         return episode;
     },
 
-    async getStreamUrls(mediaId, channelId = 'crunchyroll') {
+    async getStreamsAndSubtitles(mediaId, channelId = 'crunchyroll') {
         let res;
         try {
             res = await axios.get(`https://api.kamyroll.tech/videos/v1/streams?channel_id=${channelId}&id=${mediaId}&type=${STREAM_TYPE}&format=${SUBTITLE_FORMAT}`, {
@@ -102,43 +107,79 @@ export default {
             console.error(e.message);
             console.log(e.response.data);
 
-            return [];
+            return {};
         }
 
-        return res.data?.streams || [];
+        return res.data || {};
     },
 
     async getStreams(kitsuId, epNumber) {
         epNumber = Number(epNumber);
 
-        let seasonId = await this.getSeasonCrunchyrollId(kitsuId);
+        const seasonId = await this.getSeasonCrunchyrollId(kitsuId);
         console.log('crunchyroll id', seasonId);
 
         if (!seasonId) {
             return [];
         }
 
-        let episode = await this.getEpisode(seasonId, epNumber, 'crunchyroll');
+        // series
+        const episode = this.getEpisode(seasonId, epNumber, 'crunchyroll');
 
-        console.log('episode id', episode.id);
+        console.log('episode id', episode?.id);
 
+        let streams, subtitles;
         if (!episode) {
-            return [];
+            // maybe its a movie?
+            let result = await this.getStreamsAndSubtitles(episode.id, 'crunchyroll');
+            streams = result?.streams;
+            subtitles = result?.subtitles;
+
+            if (!streams?.length) {
+                return [];
+            }
+        } else {
+            let result = await this.getStreamsAndSubtitles(episode.id, 'crunchyroll');
+            streams = result?.streams;
+            subtitles = result?.subtitles;
         }
 
-        let streams = await this.getStreamUrls(episode.id, 'crunchyroll');
-
-        console.log('streams', streams.length);
+        console.log('streams', streams?.length);
 
         if (!streams) {
             return [];
         }
 
+        subtitles = subtitles.map((sub, i) => {
+
+            let lang;
+            if (LOCALES?.[sub.locale]) {
+                lang = LOCALES?.[sub.locale];
+            } else {
+                lang = localeEmoji(sub.locale) + ' ' + sub.locale;
+            }
+
+            return {
+                id: i,
+                //url: `http://127.0.0.1:11470/subtitles.vtt?from=${encodeURIComponent(sub.url)}`,
+                url: sub.url,
+                lang: lang,
+            };
+        }).filter(val => !!val);
+
         return streams.map((stream) => {
+            let hardsub;
+            if (LOCALES?.[stream.hardsub_locale]) {
+                hardsub = LOCALES?.[stream.hardsub_locale];
+            } else {
+                hardsub = localeEmoji(stream.hardsub_locale) || stream.hardsub_locale || 'none';
+            }
+
             return {
                 url: stream.url,
                 name: 'Crunchyroll',
-                description: `Audio: ${stream.audio_locale}, Hardsub: ${stream.hardsub_locale || 'no'}, ${episode.title} (${episode.episode_number})`
+                description: `Audio: ${localeEmoji(stream.audio_locale)}, Hardsub: ${hardsub}, ${episode.title} (${episode.episode_number})`,
+                subtitles: subtitles,
             };
         }) || [];
     },
