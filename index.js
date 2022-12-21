@@ -1,9 +1,13 @@
 import express from 'express';
 import cors from 'cors';
 import Mixpanel from 'mixpanel';
+import swStats from 'swagger-stats';
+import dotenv from 'dotenv';
 import {fileURLToPath} from 'url';
 import path from 'path';
 import kamyroll from './kamyroll.js'
+
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,6 +16,14 @@ const app = express();
 app.set('trust proxy', true);
 app.use(cors());
 app.use(express.static(path.join(__dirname, 'vue', 'dist')));
+app.use(swStats.getMiddleware({
+    name: 'pw.ers.kamyroll',
+    version: process.env.npm_package_version,
+    authentication: true,
+    onAuthenticate: (req, username, password) => {
+        return process.env.USERNAME === username && process.env.PASSWORD === password;
+    }
+}));
 
 let mixpanel = null;
 if(process.env.MIXPANEL_KEY) {

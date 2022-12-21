@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const ACCESS_TOKEN = 'HMbQeThWmZq4t7w';
+const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
 const DEVICE_TYPE = 'com.service.data';
 const DEVICE_ID = 'whatvalueshouldbeforweb';
 const STREAM_TYPE = 'adaptive_hls';
