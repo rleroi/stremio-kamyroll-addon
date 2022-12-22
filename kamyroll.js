@@ -1,6 +1,7 @@
 import axios from 'axios';
 import localeEmoji from 'locale-emoji';
 import countryMap from 'country-locale-map';
+import e from 'express';
 
 const DEVICE_TYPE = 'com.service.data';
 const DEVICE_ID = 'whatvalueshouldbeforweb';
@@ -19,6 +20,22 @@ const FLAG_ONLY = {
 
 export default {
     bearerToken: null,
+    async getTitles(kitsuId) {
+        let res;
+        try {
+            res = await axios.get(`https://kitsu.io/api/edge/anime/${kitsuId}`, {
+                // Brotli compression bug in latest Axios (https://github.com/axios/axios/issues/5346)
+                headers: { "Accept-Encoding": "gzip,deflate,compress" },
+            });
+        } catch(e) {
+            console.error(e.message);
+            console.log(e.response.data);
+
+            return [];
+        }
+
+        return Object.values(res.data?.data?.attributes?.titles || {});
+    },
     async getSeasonCrunchyrollId(kitsuId) {
         let res;
         try {
@@ -42,10 +59,20 @@ export default {
         if (!id) {
             // get crunchyroll slug
             id = res.data?.data?.map(link => {
-                return link?.attributes?.url?.match(/crunchyroll.com\/([^\/]+)$/i)?.[1];
+                // https://crunchyroll.com/xxx
+                return link?.attributes?.url?.match(/crunchyroll.com\/([^\/]+)\/?$/i)?.[1];
             }).find(value => !!value);
         }
 
+        if (!id) {
+            // get funimation slug
+            id = res.data?.data?.map(link => {
+                // https://www.funimation.com/shows/xxx/videos/episodes
+                // https://www.funimation.com/shows/xxx/
+                return link?.attributes?.url?.match(/funimation.com\/shows\/([^\/]+)/i)?.[1];
+            }).find(value => !!value);
+        }
+        
         return id;
     },
 
@@ -71,7 +98,7 @@ export default {
         this.bearerToken = res.data?.access_token;
     },
 
-    async getEpisode(mediaId, epNumber, channelId = 'crunchyroll') {
+    async getEpisodes(mediaId, epNumber, titles = [], channelId = 'crunchyroll') {
         let res;
         try {
             res = await axios.get(`https://api.kamyroll.tech/content/v1/seasons?channel_id=${channelId}&id=${mediaId}`, {
@@ -87,17 +114,22 @@ export default {
             return;
         }
 
-        let episode;
-        res.data?.items?.find((season) => {
-            episode = season?.episodes?.find((ep) => {
-                return ep.sequence_number === epNumber;
-            });
-            if(episode) {
-                return true;
-            }
-        });
+        let episodes = [];
+        res.data?.items?.forEach((season) => {
+            episodes = [...episodes, ...season?.episodes?.filter((ep) => {
+                if (ep.sequence_number !== epNumber) {
+                    return false;
+                }
 
-        return episode;
+                // check season title(s)
+                return !!titles.filter(title => {
+                    let kamyTitle = ep.season_title.replace(/\([a-z ]+ Dub+\)/ig, '').replace(/[^a-z0-9 ]+/ig, '').replace(/ +/ig, ' ').trim().toLowerCase();
+                    let kitsuTitle = title.replace(/\([a-z ]+ Dub+\)/ig, '').replace(/[^a-z0-9 ]+/ig, '').replace(/ +/ig, ' ').trim().toLowerCase();
+                    return kamyTitle === kitsuTitle;
+                }).length;
+            })];
+        });
+        return episodes;
     },
 
     async getStreamsAndSubtitles(mediaId, channelId = 'crunchyroll') {
@@ -123,35 +155,46 @@ export default {
         epNumber = Number(epNumber);
 
         const seasonId = await this.getSeasonCrunchyrollId(kitsuId);
-        console.log('crunchyroll id', seasonId);
+        console.log('crunchyroll season id', seasonId);
 
         if (!seasonId) {
             return [];
         }
 
-        // series
-        const episode = await this.getEpisode(seasonId, epNumber, 'crunchyroll');
-        console.log('episode id', episode?.id);
+        // get titles
+        let titles = await this.getTitles(kitsuId);
+        //console.log('titles', titles);
 
-        let result, streams, subtitles;
-        if (!episode) {
-            // maybe its a movie?
-            result = await this.getStreamsAndSubtitles(episode.id, 'crunchyroll');
+        // get matching episodes
+        const episodes = await this.getEpisodes(seasonId, epNumber, titles, 'crunchyroll');
+        console.log('episodes', episodes.length);
+
+        let result, streams = [], subtitles;
+        if (!episodes.length) {
+            // maybe its a movie
+            result = await this.getStreamsAndSubtitles(seasonId, 'crunchyroll');
+            streams.map(stream => {
+                return {...stream, ep: {title: 'Movie', episode_number: 1}};
+            });
             streams = result?.streams;
             subtitles = result?.subtitles;
-
-            if (!streams?.length) {
-                return [];
-            }
         } else {
-            result = await this.getStreamsAndSubtitles(episode.id, 'crunchyroll');
-            streams = result?.streams;
-            subtitles = result?.subtitles;
+            // get streams for each episode
+            for(const ep of episodes) {
+                result = await this.getStreamsAndSubtitles(ep.id, 'crunchyroll');
+                let moreStreams = result.streams.map(stream => {
+                    return {...stream, ep: ep};
+                });
+                streams = [...streams, ...moreStreams];
+                if (!subtitles) {
+                    subtitles = result?.subtitles;
+                }
+            }
         }
 
         console.log('streams', streams?.length);
 
-        if (!streams) {
+        if (!streams.length) {
             return [];
         }
 
@@ -160,7 +203,7 @@ export default {
             if (LOCALES?.[sub.locale]) {
                 alpha3 = countryMap.getAlpha3ByAlpha2(LOCALES[sub.locale]?.replace(/[^a-z\-]+/i, '').match(/\-([a-z]{2})$/i)?.[1]);
             } else {
-                alpha3 = countryMap.getAlpha3ByAlpha2(`${sub.locale}`.match(/\-([a-z]{2})$/i)?.[1]);
+                alpha3 = countryMap.getAlpha3ByAlpha2(`${sub.locale}`.match(/(\-[a-z]{2})$/i)?.[1]); // TODO we should get the first part (language), instead of the second part (country): en-US
             }
 
             if (!alpha3) {
@@ -188,10 +231,17 @@ export default {
                 }).join(' ') : 'No subs'
             }
 
+            let audio = '';
+            if (LOCALES?.[stream.audio_locale]) {
+                audio = LOCALES[stream.audio_locale];
+            } else if(stream.audio_locale) {
+                audio = `${localeEmoji(stream.audio_locale)} ${stream.audio_locale}`;
+            }
+
             return {
                 url: stream.url,
                 name: 'Crunchyroll',
-                description: `Audio: ${localeEmoji(stream.audio_locale)} ${stream.audio_locale}, ${subs}, ${episode.title} (${episode.episode_number})`,
+                description: `Audio: ${audio}, ${subs}, ${stream.ep.title} (${stream.ep.episode_number})`,
                 subtitles: subtitles,
             };
         }) || [];
