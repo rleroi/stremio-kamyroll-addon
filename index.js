@@ -3,11 +3,11 @@ import cors from 'cors';
 import Mixpanel from 'mixpanel';
 import swStats from 'swagger-stats';
 import dotenv from 'dotenv';
-dotenv.config();
 import {fileURLToPath} from 'url';
 import path from 'path';
 import kamyroll from './kamyroll.js'
 
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
