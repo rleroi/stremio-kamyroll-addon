@@ -40,7 +40,7 @@ export default {
 
         if (!id) {
             // get crunchyroll slug
-            res.data?.data?.map(link => {
+            id = res.data?.data?.map(link => {
                 return link?.attributes?.url?.match(/crunchyroll.com\/([^\/]+)$/i)?.[1];
             }).find(value => !!value);
         }
