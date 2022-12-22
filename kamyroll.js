@@ -8,7 +8,7 @@ const STREAM_TYPE = 'adaptive_hls'; // adaptive_hls, adaptive_dash, drm_adaptive
 const SUBTITLE_FORMAT = 'vtt'; // ass, vtt, srt
 const LOCALES = {
     'es-419': '🇪🇸 LatAm',
-    'ar-ME': '🇲🇦 ar-MA',
+    'ar-ME': 'Arabic ME',
     'uk-UK': '🇺🇦 uk-UA',
 };
 const FLAG_ONLY = {
