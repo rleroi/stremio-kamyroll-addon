@@ -14,7 +14,7 @@ const LOCALES = {
 };
 const FLAG_ONLY = {
     'es-419': '🇪🇸',
-    'ar-ME': '🇲🇦',
+    'ar-ME': '',
     'uk-UK': '🇺🇦',
 };
 
