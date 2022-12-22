@@ -14,6 +14,7 @@
   "dependencies": {
     "axios": "^1.2.1",
     "cors": "^2.8.5",
+    "country-locale-map": "^1.8.11",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "locale-emoji": "^0.3.0",

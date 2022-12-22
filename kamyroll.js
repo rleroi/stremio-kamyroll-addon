@@ -1,5 +1,6 @@
 import axios from 'axios';
 import localeEmoji from 'locale-emoji';
+import countryMap from 'country-locale-map';
 
 const DEVICE_TYPE = 'com.service.data';
 const DEVICE_ID = 'whatvalueshouldbeforweb';
@@ -155,17 +156,21 @@ export default {
         }
 
         subtitles = subtitles.map((sub, i) => {
-            let lang;
+            let alpha3;
             if (LOCALES?.[sub.locale]) {
-                lang = LOCALES?.[sub.locale];
+                alpha3 = countryMap.getAlpha3ByAlpha2(LOCALES[sub.locale]?.replace(/[^a-z\-]+/i, '').match(/\-([a-z]{2})$/i)?.[1]);
             } else {
-                lang = `${localeEmoji(sub.locale)} ${sub.locale}`;
+                alpha3 = countryMap.getAlpha3ByAlpha2(`${sub.locale}`.match(/\-([a-z]{2})$/i)?.[1]);
+            }
+
+            if (!alpha3) {
+                return null;
             }
 
             return {
                 id: i,
                 url: sub.url,
-                lang: lang,
+                lang: alpha3,
             };
         }).filter(val => !!val);
 
