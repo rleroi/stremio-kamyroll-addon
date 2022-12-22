@@ -46,7 +46,7 @@ app.get('/manifest.json', function(req, res) {
         name: 'Anime Kamyroll',
         description: 'HTTP streams directly from Crunchyroll and more. Requires Anime Kitsu Addon.',
         catalogs: [],
-        resources: ['stream', 'subtitles'],
+        resources: ['stream'],
         types: ['movie', 'series', 'anime'],
         idPrefixes: ['kitsu'],
         behaviorHints: {

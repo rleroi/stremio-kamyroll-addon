@@ -3,7 +3,7 @@ import localeEmoji from 'locale-emoji';
 
 const DEVICE_TYPE = 'com.service.data';
 const DEVICE_ID = 'whatvalueshouldbeforweb';
-const STREAM_TYPE = 'adaptive_hls';
+const STREAM_TYPE = 'adaptive_hls'; // adaptive_hls, adaptive_dash, drm_adaptive_dash
 const SUBTITLE_FORMAT = 'vtt'; // ass, vtt, srt
 const LOCALES = {
     'es-419': '🇪🇸 LatAm',
@@ -130,7 +130,6 @@ export default {
 
         // series
         const episode = await this.getEpisode(seasonId, epNumber, 'crunchyroll');
-
         console.log('episode id', episode?.id);
 
         let result, streams, subtitles;
