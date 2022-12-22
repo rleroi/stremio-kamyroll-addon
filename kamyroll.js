@@ -40,7 +40,6 @@ export default {
         let res;
         try {
             res = await axios.get(`https://kitsu.io/api/edge/anime/${kitsuId}/streaming-links`, {
-                // Brotli compression bug in latest Axios (https://github.com/axios/axios/issues/5346)
                 headers: { "Accept-Encoding": "gzip,deflate,compress" },
             });
         } catch(e) {
@@ -125,10 +124,31 @@ export default {
                 return !!titles.filter(title => {
                     let kamyTitle = ep.season_title.replace(/\([a-z ]+ Dub+\)/ig, '').replace(/[^a-z0-9 ]+/ig, '').replace(/ +/ig, ' ').trim().toLowerCase();
                     let kitsuTitle = title.replace(/\([a-z ]+ Dub+\)/ig, '').replace(/[^a-z0-9 ]+/ig, '').replace(/ +/ig, ' ').trim().toLowerCase();
+                    //console.log(kamyTitle, '===', kitsuTitle, kamyTitle === kitsuTitle);
                     return kamyTitle === kitsuTitle;
                 }).length;
             })];
         });
+
+        // if nothing found, try again with loose season title check
+        if (!episodes.length) {
+            res.data?.items?.forEach((season) => {
+                episodes = [...episodes, ...season?.episodes?.filter((ep) => {
+                    if (ep.sequence_number !== epNumber) {
+                        return false;
+                    }
+    
+                    // check season title(s)
+                    return !!titles.filter(title => {
+                        let kamyTitle = ep.season_title.replace(/\([a-z ]+ Dub+\)/ig, '').replace(/[^a-z0-9 ]+/ig, '').replace(/ +/ig, ' ').trim().toLowerCase();
+                        let kitsuTitle = title.replace(/\([a-z ]+ Dub+\)/ig, '').replace(/[^a-z0-9 ]+/ig, '').replace(/ +/ig, ' ').trim().toLowerCase();
+                        //console.log(kamyTitle, '==', kitsuTitle, kamyTitle === kitsuTitle);
+                        return kamyTitle.includes(kitsuTitle) || kitsuTitle.includes(kamyTitle);
+                    }).length;
+                })];
+            });
+        }
+
         return episodes;
     },
 
@@ -163,7 +183,7 @@ export default {
 
         // get titles
         let titles = await this.getTitles(kitsuId);
-        //console.log('titles', titles);
+        console.log('titles', titles);
 
         // get matching episodes
         const episodes = await this.getEpisodes(seasonId, epNumber, titles, 'crunchyroll');
@@ -194,7 +214,7 @@ export default {
 
         console.log('streams', streams?.length);
 
-        if (!streams.length) {
+        if (!streams?.length) {
             return [];
         }
 
