@@ -6,9 +6,14 @@ const DEVICE_ID = 'whatvalueshouldbeforweb';
 const STREAM_TYPE = 'adaptive_hls';
 const SUBTITLE_FORMAT = 'vtt'; // ass, vtt, srt
 const LOCALES = {
-    'es-419': '🇪🇸 (LatAm)',
+    'es-419': '🇪🇸 LatAm',
     'ar-ME': '🇲🇦 ar-MA',
     'uk-UK': '🇺🇦 uk-UA',
+};
+const FLAG_ONLY = {
+    'es-419': '🇪🇸',
+    'ar-ME': '🇲🇦',
+    'uk-UK': '🇺🇦',
 };
 
 export default {
@@ -124,14 +129,14 @@ export default {
         }
 
         // series
-        const episode = this.getEpisode(seasonId, epNumber, 'crunchyroll');
+        const episode = await this.getEpisode(seasonId, epNumber, 'crunchyroll');
 
         console.log('episode id', episode?.id);
 
-        let streams, subtitles;
+        let result, streams, subtitles;
         if (!episode) {
             // maybe its a movie?
-            let result = await this.getStreamsAndSubtitles(episode.id, 'crunchyroll');
+            result = await this.getStreamsAndSubtitles(episode.id, 'crunchyroll');
             streams = result?.streams;
             subtitles = result?.subtitles;
 
@@ -139,7 +144,7 @@ export default {
                 return [];
             }
         } else {
-            let result = await this.getStreamsAndSubtitles(episode.id, 'crunchyroll');
+            result = await this.getStreamsAndSubtitles(episode.id, 'crunchyroll');
             streams = result?.streams;
             subtitles = result?.subtitles;
         }
@@ -151,34 +156,38 @@ export default {
         }
 
         subtitles = subtitles.map((sub, i) => {
-
             let lang;
             if (LOCALES?.[sub.locale]) {
                 lang = LOCALES?.[sub.locale];
             } else {
-                lang = localeEmoji(sub.locale) + ' ' + sub.locale;
+                lang = `${localeEmoji(sub.locale)} ${sub.locale}`;
             }
 
             return {
                 id: i,
-                //url: `http://127.0.0.1:11470/subtitles.vtt?from=${encodeURIComponent(sub.url)}`,
                 url: sub.url,
                 lang: lang,
             };
         }).filter(val => !!val);
 
         return streams.map((stream) => {
-            let hardsub;
+            let subs = '';
             if (LOCALES?.[stream.hardsub_locale]) {
-                hardsub = LOCALES?.[stream.hardsub_locale];
-            } else {
-                hardsub = localeEmoji(stream.hardsub_locale) || stream.hardsub_locale || 'none';
+                subs = `Hardsub: ${LOCALES[stream.hardsub_locale]}`;
+            } else if(stream.hardsub_locale) {
+                subs = `Hardsub: ${localeEmoji(stream.hardsub_locale)} ${stream.hardsub_locale}`;
+            }
+
+            if (!subs) {
+                subs = subtitles.length ? 'Multi-Sub: ' + result.subtitles.map((sub) => {
+                    return FLAG_ONLY?.[sub.locale] || (sub.locale ? localeEmoji(sub.locale) : '');
+                }).join(' ') : 'No subs'
             }
 
             return {
                 url: stream.url,
                 name: 'Crunchyroll',
-                description: `Audio: ${localeEmoji(stream.audio_locale)}, Hardsub: ${hardsub}, ${episode.title} (${episode.episode_number})`,
+                description: `Audio: ${localeEmoji(stream.audio_locale)} ${stream.audio_locale}, ${subs}, ${episode.title} (${episode.episode_number})`,
                 subtitles: subtitles,
             };
         }) || [];
