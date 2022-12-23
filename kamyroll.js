@@ -18,35 +18,35 @@ const FLAG_ONLY = {
     'uk-UK': '🇺🇦',
 };
 
+const client = axios.create({
+  timeout: 5000,
+  headers: { "Accept-Encoding": "gzip,deflate,compress" },
+// Brotli compression bug in latest Axios (https://github.com/axios/axios/issues/5346)
+
+
+})
+
 export default {
     bearerToken: null,
-    async getTitles(kitsuId) {
-        let res;
+    
+    getTitles(kitsuId) {
         try {
-            res = await axios.get(`https://kitsu.io/api/edge/anime/${kitsuId}`, {
-                // Brotli compression bug in latest Axios (https://github.com/axios/axios/issues/5346)
-                headers: { "Accept-Encoding": "gzip,deflate,compress" },
-            });
+             return client.get(`https://kitsu.io/api/edge/anime/${kitsuId}`).then(res=>{
+                return Object.values(res.data?.data?.attributes?.titles || {});
+             });
         } catch(e) {
             console.error(e.message);
             console.log(e.response.data);
-
-            return [];
         }
-
-        return Object.values(res.data?.data?.attributes?.titles || {});
     },
+    
     async getSeasonCrunchyrollId(kitsuId) {
         let res;
         try {
-            res = await axios.get(`https://kitsu.io/api/edge/anime/${kitsuId}/streaming-links`, {
-                headers: { "Accept-Encoding": "gzip,deflate,compress" },
-            });
+            res = await client.get(`https://kitsu.io/api/edge/anime/${kitsuId}/streaming-links`);
         } catch(e) {
             console.error(e.message);
             console.log(e.response.data);
-
-            return;
         }
 
         let id;
@@ -75,42 +75,31 @@ export default {
         return id;
     },
 
-    async refreshToken() {
-        let res;
+    refreshToken() {
         try {
-            res = await axios.post('https://api.kamyroll.tech/auth/v1/token',
+            client.post('https://api.kamyroll.tech/auth/v1/token',
                 {
                     "access_token": process.env.ACCESS_TOKEN,
                     "device_type": DEVICE_TYPE,
                     "device_id": DEVICE_ID,
-                }, {
-                    headers: { "Accept-Encoding": "gzip,deflate,compress" },
-                },
-            );
+                }
+            ).then(res=>{ this.bearerToken = res.data?.access_token; });
         } catch(e) {
             console.error('Failed to get token: ' + e.message);
             console.log(e.response.data);
+    }
 
-            return;
-        }
-
-        this.bearerToken = res.data?.access_token;
     },
 
     async getEpisodes(mediaId, epNumber, titles = [], channelId = 'crunchyroll') {
-        let res;
+        let res
         try {
-            res = await axios.get(`https://api.kamyroll.tech/content/v1/seasons?channel_id=${channelId}&id=${mediaId}`, {
-                headers: {
-                    "Accept-Encoding": "gzip,deflate,compress",
-                    "Authorization": `Bearer ${this.bearerToken}`,
-                },
-            });
+            res = await client.get(`https://api.kamyroll.tech/content/v1/seasons?channel_id=${channelId}&id=${mediaId}`, {
+                headers: {"Authorization": `Bearer ${this.bearerToken}`}
+            })
         } catch(e) {
             console.error(e.message);
             console.log(e.response.data);
-
-            return;
         }
 
         let episodes = [];
@@ -152,23 +141,15 @@ export default {
         return episodes;
     },
 
-    async getStreamsAndSubtitles(mediaId, channelId = 'crunchyroll') {
-        let res;
+    getStreamsAndSubtitles(mediaId, channelId = 'crunchyroll') {
         try {
-            res = await axios.get(`https://api.kamyroll.tech/videos/v1/streams?channel_id=${channelId}&id=${mediaId}&type=${STREAM_TYPE}&format=${SUBTITLE_FORMAT}`, {
-                headers: {
-                    "Accept-Encoding": "gzip,deflate,compress",
-                    "Authorization": `Bearer ${this.bearerToken}`,
-                },
+            return client.get(`https://api.kamyroll.tech/videos/v1/streams?channel_id=${channelId}&id=${mediaId}&type=${STREAM_TYPE}&format=${SUBTITLE_FORMAT}`, {
+                headers: {"Authorization": `Bearer ${this.bearerToken}`}
             });
         } catch(e) {
             console.error(e.message);
             console.log(e.response.data);
-
-            return {};
         }
-
-        return res.data || {};
     },
 
     async getStreams(kitsuId, epNumber) {
