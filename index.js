@@ -1,13 +1,14 @@
+
+dotenv.config();
 import express from 'express';
 import cors from 'cors';
 import Mixpanel from 'mixpanel';
 import swStats from 'swagger-stats';
 import dotenv from 'dotenv';
-dotenv.config();
-import {fileURLToPath} from 'url';
 import path from 'path';
 import kamyroll from './kamyroll.js'
-
+import { fileURLToPath } from 'url';
+import { hasImdbMapping, ImdbToKitsu } from './lib/metadataEnrich'
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -26,11 +27,11 @@ app.use(swStats.getMiddleware({
 }));
 
 let mixpanel = null;
-if(process.env.MIXPANEL_KEY) {
+if (process.env.MIXPANEL_KEY) {
     mixpanel = Mixpanel.init(process.env.MIXPANEL_KEY);
 }
 
-app.get('/manifest.json', function(req, res) {
+app.get('/manifest.json', function (req, res) {
     //res.setHeader('Cache-Control', 'max-age=86400,stale-while-revalidate=86400,stale-if-error=86400,public');
     res.setHeader('content-type', 'application/json');
 
@@ -48,7 +49,7 @@ app.get('/manifest.json', function(req, res) {
         catalogs: [],
         resources: ['stream'],
         types: ['movie', 'series', 'anime'],
-        idPrefixes: ['kitsu'],
+        idPrefixes: ['tt', 'kitsu'],
         behaviorHints: {
             configurable: true,
         }
@@ -56,18 +57,34 @@ app.get('/manifest.json', function(req, res) {
 })
 
 // streams
-app.get('/stream/:type/:id/:extra?.json', async function(req, res) {
+app.get('/stream/:type/:id/:extra?.json', async function (req, res) {
     //res.setHeader('Cache-Control', 'max-age=86400,stale-while-revalidate=86400,stale-if-error=86400,public');
     res.setHeader('content-type', 'application/json');
+    const [type, id, extra] = req.params
 
-    let kitsuId, ep;
-    [kitsuId, kitsuId, ep] = req.params.id.split(':');
+    if (id.match(/^tt\d+:\d+:\d+$/)) {
+        if (!hasImdbMapping(id.split(":")[0])) {
+            return Promise.reject(`No imdb mapping for: ${id.split(":")[0]}`);
+        }
+        const kitsu_Id = await ImdbToKitsu(id, type);
+        const [prefix, kitsuId, ep] = kitsu_Id.split(':');
+        const streams = await kamyroll.getStreams(kitsuId, ep);
 
-    const streams = await kamyroll.getStreams(kitsuId, ep);
+        res.send({
+            streams: streams,
+        });
+    }
 
-    res.send({
-        streams: streams,
-    });
+    if (id.match(/^kitsu:\d+(?::\d+)?$/i)) {
+        const [prefix, kitsuId, ep] = id.split(':');
+        const streams = await kamyroll.getStreams(kitsuId, ep);
+
+        res.send({
+            streams: streams,
+        });
+    }
+
+
 });
 
 

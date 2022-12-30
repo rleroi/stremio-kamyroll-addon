@@ -263,6 +263,9 @@ export default {
                 name: 'Crunchyroll',
                 description: `Audio: ${audio}, ${subs}, ${stream.ep.title} (${stream.ep.episode_number})`,
                 subtitles: subtitles,
+                behaviorHints: {
+                    bingeGroup: `Crunchyroll-${audio}-${subs}`,
+                  },
             };
         }) || [];
     },
