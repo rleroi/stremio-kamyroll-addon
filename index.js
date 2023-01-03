@@ -47,7 +47,7 @@ app.get('/manifest.json', function(req, res) {
         description: 'HTTP streams directly from Crunchyroll and more. Requires Anime Kitsu Addon.',
         catalogs: [],
         resources: ['stream'],
-        types: ['movie', 'series', 'anime'],
+        types: [],
         idPrefixes: ['kitsu'],
         behaviorHints: {
             configurable: true,
