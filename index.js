@@ -82,11 +82,11 @@ app.get('/stream/:type/:id/:extra?.json', async function(req, res) {
 
 
 // fallback to Vue
-// app.get(/.*/, (req, res) => {
-//     res.setHeader('Cache-Control', 'max-age=86400,stale-while-revalidate=86400,stale-if-error=86400,public');
-//     res.setHeader('content-type', 'text/html');
-//     res.sendFile(path.join(__dirname, 'vue', 'dist', 'index.html'));
-// });
+app.get(/.*/, (req, res) => {
+    res.setHeader('Cache-Control', 'max-age=86400,stale-while-revalidate=86400,stale-if-error=86400,public');
+    res.setHeader('content-type', 'text/html');
+    res.sendFile(path.join(__dirname, 'vue', 'dist', 'index.html'));
+});
 
 
 kamyroll.refreshToken();
