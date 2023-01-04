@@ -44,7 +44,7 @@ app.get('/manifest.json', function(req, res) {
         logo: 'https://play-lh.googleusercontent.com/CjzbMcLbmTswzCGauGQExkFsSHvwjKEeWLbVVJx0B-J9G6OQ-UCl2eOuGBfaIozFqow',
         version: process.env.npm_package_version,
         name: 'Anime Kamyroll',
-        description: 'HTTP streams directly from Crunchyroll, Funimation, and more. Multi subs and dubs. 🇪🇸 🇫🇷 🇮🇹 🇺🇸 🇧🇷 🇩🇪 🇷🇺 🇹🇷 🇸🇦 🇺🇦 🇮🇱 🇵🇱 🇷🇴 🇸🇪',
+        description: 'HTTP streams directly from Crunchyroll, Funimation, and more. Works best with Anime Kitsu Addon. 🇪🇸 🇫🇷 🇮🇹 🇺🇸 🇧🇷 🇩🇪 🇷🇺 🇹🇷 🇸🇦 🇺🇦 🇮🇱 🇵🇱 🇷🇴 🇸🇪',
         catalogs: [],
         resources: ['stream'],
         types: ['movie', 'series', 'anime'],
