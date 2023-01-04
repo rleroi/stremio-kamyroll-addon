@@ -1,7 +1,6 @@
 import axios from 'axios';
 import localeEmoji from 'locale-emoji';
 import countryMap from 'country-locale-map';
-import e from 'express';
 
 const DEVICE_TYPE = 'com.service.data';
 const DEVICE_ID = 'whatvalueshouldbeforweb';
@@ -124,7 +123,6 @@ export default {
                 return !!titles.filter(title => {
                     let kamyTitle = ep.season_title.replace(/\([a-z ]+ Dub+\)/ig, '').replace(/[^a-z0-9 ]+/ig, '').replace(/ +/ig, ' ').trim().toLowerCase();
                     let kitsuTitle = title.replace(/\([a-z ]+ Dub+\)/ig, '').replace(/[^a-z0-9 ]+/ig, '').replace(/ +/ig, ' ').trim().toLowerCase();
-                    //console.log(kamyTitle, '===', kitsuTitle, kamyTitle === kitsuTitle);
                     return kamyTitle === kitsuTitle;
                 }).length;
             })];
@@ -142,7 +140,6 @@ export default {
                     return !!titles.filter(title => {
                         let kamyTitle = ep.season_title.replace(/\([a-z ]+ Dub+\)/ig, '').replace(/[^a-z0-9 ]+/ig, '').replace(/ +/ig, ' ').trim().toLowerCase();
                         let kitsuTitle = title.replace(/\([a-z ]+ Dub+\)/ig, '').replace(/[^a-z0-9 ]+/ig, '').replace(/ +/ig, ' ').trim().toLowerCase();
-                        //console.log(kamyTitle, '==', kitsuTitle, kamyTitle === kitsuTitle);
                         return kamyTitle.includes(kitsuTitle) || kitsuTitle.includes(kamyTitle);
                     }).length;
                 })];
@@ -223,7 +220,7 @@ export default {
             if (LOCALES?.[sub.locale]) {
                 alpha3 = countryMap.getAlpha3ByAlpha2(LOCALES[sub.locale]?.replace(/[^a-z\-]+/i, '').match(/\-([a-z]{2})$/i)?.[1]);
             } else {
-                alpha3 = countryMap.getAlpha3ByAlpha2(`${sub.locale}`.match(/(\-[a-z]{2})$/i)?.[1]); // TODO we should get the first part (language), instead of the second part (country): en-US
+                alpha3 = countryMap.getAlpha3ByAlpha2(`${sub.locale}`.match(/(\[a-z]{2}-)$/i)?.[1]); // TODO we should get the first part (language), instead of the second part (country): en-US
             }
 
             if (!alpha3) {
@@ -263,6 +260,9 @@ export default {
                 name: 'Crunchyroll',
                 description: `Audio: ${audio}, ${subs}, ${stream.ep.title} (${stream.ep.episode_number})`,
                 subtitles: subtitles,
+                behaviorHints: {
+                    bingeGroup: `crunchyroll-${audio}-${subs}`,
+                },
             };
         }) || [];
     },
