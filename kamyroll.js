@@ -36,13 +36,18 @@ export default {
     },
 
     getKitsuId(imdbId, season, ep) {
+        let possibleMatch = null;
         for (const [kitsuId, value] of Object.entries(this.kitsuMapping)) {
             if (value.imdb_id !== imdbId) {
                 continue;
             }
+            possibleMatch = kitsuId;
+
             if (value.fromSeason && season < value.fromSeason) {
                 continue;
             }
+            possibleMatch = kitsuId;
+
             if (value.fromEpisode && ep < value.fromEpisode) {
                 continue;
             }
@@ -50,7 +55,7 @@ export default {
             return kitsuId;
         }
 
-        return null;
+        return possibleMatch;
     },
 
     async getTitles(kitsuId) {
