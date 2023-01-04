@@ -7,7 +7,6 @@ dotenv.config();
 import {fileURLToPath} from 'url';
 import path from 'path';
 import kamyroll from './kamyroll.js'
-import { EOF } from 'dns';
 
 
 const __filename = fileURLToPath(import.meta.url);
