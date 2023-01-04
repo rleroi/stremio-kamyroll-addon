@@ -206,7 +206,6 @@ export default {
         }
 
         subtitles = subtitles.map((sub, i) => {
-            console.log(sub.url);
             return {
                 id: i,
                 url: sub.url,
