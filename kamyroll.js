@@ -18,6 +18,41 @@ const FLAG_ONLY = {
 
 export default {
     bearerToken: null,
+    kitsuMapping: {},
+    async updateKitsuMapping() {
+        let res;
+        try {
+            res = await axios.get('https://raw.githubusercontent.com/TheBeastLT/stremio-kitsu-anime/master/static/data/imdb_mapping.json');
+        } catch(e) {
+            console.error(e.message);
+            console.log(e.response.data);
+
+            return;
+        }
+
+        if (res.data) {
+            this.kitsuMapping = res.data;
+        }
+    },
+
+    getKitsuId(imdbId, season, ep) {
+        for (const [kitsuId, value] of Object.entries(this.kitsuMapping)) {
+            if (value.imdb_id !== imdbId) {
+                continue;
+            }
+            if (value.fromSeason && season < value.fromSeason) {
+                continue;
+            }
+            if (value.fromEpisode && ep < value.fromEpisode) {
+                continue;
+            }
+
+            return kitsuId;
+        }
+
+        return null;
+    },
+
     async getTitles(kitsuId) {
         let res;
         try {
@@ -31,6 +66,7 @@ export default {
 
         return Object.values(res.data?.data?.attributes?.titles || {});
     },
+
     async getSeasonCrunchyrollId(kitsuId) {
         let res;
         try {
@@ -159,6 +195,10 @@ export default {
     },
 
     async getStreams(kitsuId, epNumber) {
+        if (!kitsuId) {
+            return [];
+        }
+
         epNumber = Number(epNumber);
 
         const seasonId = await this.getSeasonCrunchyrollId(kitsuId);

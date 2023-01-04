@@ -44,11 +44,11 @@ app.get('/manifest.json', function(req, res) {
         logo: 'https://play-lh.googleusercontent.com/CjzbMcLbmTswzCGauGQExkFsSHvwjKEeWLbVVJx0B-J9G6OQ-UCl2eOuGBfaIozFqow',
         version: process.env.npm_package_version,
         name: 'Anime Kamyroll',
-        description: 'HTTP streams directly from Crunchyroll and more. Requires Anime Kitsu Addon.',
+        description: 'HTTP streams directly from Crunchyroll, Funimation, and more. Multi subs and dubs. 🇪🇸 🇫🇷 🇮🇹 🇺🇸 🇧🇷 🇩🇪 🇷🇺 🇹🇷 🇸🇦 🇺🇦 🇮🇱 🇵🇱 🇷🇴 🇸🇪',
         catalogs: [],
         resources: ['stream'],
         types: ['movie', 'series', 'anime'],
-        idPrefixes: ['kitsu'],
+        idPrefixes: ['tt', 'kitsu'],
         behaviorHints: {
             configurable: true,
         }
@@ -60,8 +60,16 @@ app.get('/stream/:type/:id/:extra?.json', async function(req, res) {
     //res.setHeader('Cache-Control', 'max-age=86400,stale-while-revalidate=86400,stale-if-error=86400,public');
     res.setHeader('content-type', 'application/json');
 
-    let kitsuId, ep;
-    [kitsuId, kitsuId, ep] = req.params.id.split(':');
+    let imdbId, kitsuId, season, ep;
+
+    // imdb id
+    if (req.params.id.startsWith('tt')) {
+        [imdbId, season, ep] = req.params.id.split(':');
+        kitsuId = kamyroll.getKitsuId(imdbId, season, ep);
+        console.log('imdb to kitsu id', kitsuId);
+    } else {
+        [kitsuId, kitsuId, ep] = req.params.id.split(':');
+    }
 
     mixpanel && mixpanel.track('stream', {
         ip: req.ip,
@@ -70,6 +78,8 @@ app.get('/stream/:type/:id/:extra?.json', async function(req, res) {
         stream_id: req.params.id,
         stream_extra: req.params?.extra,
         kitsu_id: kitsuId,
+        imdb_id: imdbId,
+        season: season,
         ep: ep,
     });
 
@@ -88,9 +98,11 @@ app.get(/.*/, (req, res) => {
     res.sendFile(path.join(__dirname, 'vue', 'dist', 'index.html'));
 });
 
-
 kamyroll.refreshToken();
-setInterval(kamyroll.refreshToken, 86400); // refresh daily
+setInterval(kamyroll.refreshToken, 86400); // refresh token daily
+
+kamyroll.updateKitsuMapping();
+setInterval(kamyroll.updateKitsuMapping, 86400); // update kitsu mapping daily
 
 app.listen(process.env.PORT || 9000, () => {
     console.log('http://127.0.0.1:9000/manifest.json');
