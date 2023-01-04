@@ -7,6 +7,7 @@ dotenv.config();
 import {fileURLToPath} from 'url';
 import path from 'path';
 import kamyroll from './kamyroll.js'
+import { EOF } from 'dns';
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -62,6 +63,16 @@ app.get('/stream/:type/:id/:extra?.json', async function(req, res) {
 
     let kitsuId, ep;
     [kitsuId, kitsuId, ep] = req.params.id.split(':');
+
+    mixpanel && mixpanel.track('stream', {
+        ip: req.ip,
+        distinct_id: req.ip.replace(/\.|:/g, 'Z'),
+        stream_type: req.params.type,
+        stream_id: req.params.id,
+        stream_extra: req.params?.extra,
+        kitsu_id: kitsuId,
+        ep: ep,
+    });
 
     const streams = await kamyroll.getStreams(kitsuId, ep);
 

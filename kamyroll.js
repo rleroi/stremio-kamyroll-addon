@@ -1,6 +1,5 @@
 import axios from 'axios';
 import localeEmoji from 'locale-emoji';
-import countryMap from 'country-locale-map';
 
 const DEVICE_TYPE = 'com.service.data';
 const DEVICE_ID = 'whatvalueshouldbeforweb';
@@ -22,10 +21,7 @@ export default {
     async getTitles(kitsuId) {
         let res;
         try {
-            res = await axios.get(`https://kitsu.io/api/edge/anime/${kitsuId}`, {
-                // Brotli compression bug in latest Axios (https://github.com/axios/axios/issues/5346)
-                headers: { "Accept-Encoding": "gzip,deflate,compress" },
-            });
+            res = await axios.get(`https://kitsu.io/api/edge/anime/${kitsuId}`);
         } catch(e) {
             console.error(e.message);
             console.log(e.response.data);
@@ -38,9 +34,7 @@ export default {
     async getSeasonCrunchyrollId(kitsuId) {
         let res;
         try {
-            res = await axios.get(`https://kitsu.io/api/edge/anime/${kitsuId}/streaming-links`, {
-                headers: { "Accept-Encoding": "gzip,deflate,compress" },
-            });
+            res = await axios.get(`https://kitsu.io/api/edge/anime/${kitsuId}/streaming-links`);
         } catch(e) {
             console.error(e.message);
             console.log(e.response.data);
@@ -82,8 +76,6 @@ export default {
                     "access_token": process.env.ACCESS_TOKEN,
                     "device_type": DEVICE_TYPE,
                     "device_id": DEVICE_ID,
-                }, {
-                    headers: { "Accept-Encoding": "gzip,deflate,compress" },
                 },
             );
         } catch(e) {
@@ -101,7 +93,6 @@ export default {
         try {
             res = await axios.get(`https://api.kamyroll.tech/content/v1/seasons?channel_id=${channelId}&id=${mediaId}`, {
                 headers: {
-                    "Accept-Encoding": "gzip,deflate,compress",
                     "Authorization": `Bearer ${this.bearerToken}`,
                 },
             });
@@ -154,7 +145,6 @@ export default {
         try {
             res = await axios.get(`https://api.kamyroll.tech/videos/v1/streams?channel_id=${channelId}&id=${mediaId}&type=${STREAM_TYPE}&format=${SUBTITLE_FORMAT}`, {
                 headers: {
-                    "Accept-Encoding": "gzip,deflate,compress",
                     "Authorization": `Bearer ${this.bearerToken}`,
                 },
             });
@@ -216,23 +206,13 @@ export default {
         }
 
         subtitles = subtitles.map((sub, i) => {
-            let alpha3;
-            if (LOCALES?.[sub.locale]) {
-                alpha3 = countryMap.getAlpha3ByAlpha2(LOCALES[sub.locale]?.replace(/[^a-z\-]+/i, '').match(/\-([a-z]{2})$/i)?.[1]);
-            } else {
-                alpha3 = countryMap.getAlpha3ByAlpha2(`${sub.locale}`.match(/(\[a-z]{2}-)$/i)?.[1]); // TODO we should get the first part (language), instead of the second part (country): en-US
-            }
-
-            if (!alpha3) {
-                return null;
-            }
-
+            console.log(sub.url);
             return {
                 id: i,
                 url: sub.url,
-                lang: alpha3,
+                lang: sub.locale,
             };
-        }).filter(val => !!val);
+        })//.filter(val => !!val);
 
         return streams.map((stream) => {
             let subs = '';
