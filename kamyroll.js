@@ -35,27 +35,41 @@ export default {
         }
     },
 
-    getKitsuId(imdbId, season, ep) {
-        let possibleMatch = null;
+    hasKitsuMapping(imdbId) {
         for (const [kitsuId, value] of Object.entries(this.kitsuMapping)) {
             if (value.imdb_id !== imdbId) {
-                continue;
-            }
-            possibleMatch = kitsuId;
-
-            if (value.fromSeason && season < value.fromSeason) {
-                continue;
-            }
-            possibleMatch = kitsuId;
-
-            if (value.fromEpisode && ep < value.fromEpisode) {
                 continue;
             }
 
             return kitsuId;
         }
 
-        return possibleMatch;
+        return false;
+    },
+
+    async getKitsuId(imdbId, type, season, ep) {
+        season = Number(season);
+        ep = Number(ep);
+
+        // has no kitsu mapping
+        if (!this.hasKitsuMapping(imdbId)) {
+            console.log('has no kitsu mapping');
+            return { kitsuId: null, ep: null };
+        }
+
+        // get kitsu mapping
+        let res = await axios.get(`https://anime-kitsu.strem.fun/meta/${type}/${imdbId}.json`);
+
+        for (const episode of res.data?.meta?.videos || []) {
+            if (episode.season === season && episode.number === ep) {
+                return {
+                    kitsuId: Number(episode.kitsu_id),
+                    ep: episode.kitsuEpisode,
+                }
+            }
+        }
+
+        return { kitsuId: null, ep: null };
     },
 
     async getTitles(kitsuId) {
@@ -86,7 +100,7 @@ export default {
         let id;
         // get vrv id
         id = res.data?.data?.map(link => {
-            return link?.attributes?.url?.match(/\/series\/([^\/]+)\//i)?.[1];
+            return link?.attributes?.url?.match(/vrv.co\/series\/([^\/]+)\//i)?.[1];
         }).find(value => !!value);
 
         if (!id) {

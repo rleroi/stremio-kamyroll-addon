@@ -65,8 +65,8 @@ app.get('/stream/:type/:id/:extra?.json', async function(req, res) {
     // imdb id
     if (req.params.id.startsWith('tt')) {
         [imdbId, season, ep] = req.params.id.split(':');
-        kitsuId = kamyroll.getKitsuId(imdbId, season, ep);
-        console.log('imdb to kitsu id', kitsuId);
+        ({kitsuId, ep} = await kamyroll.getKitsuId(imdbId, req.params.type, season, ep));
+        console.log('imdb to kitsu id and ep', kitsuId, ep);
     } else {
         [kitsuId, kitsuId, ep] = req.params.id.split(':');
     }
@@ -82,6 +82,8 @@ app.get('/stream/:type/:id/:extra?.json', async function(req, res) {
         season: season,
         ep: ep,
     });
+
+    console.log('find kitsu id ', kitsuId);
 
     const streams = await kamyroll.getStreams(kitsuId, ep);
 
