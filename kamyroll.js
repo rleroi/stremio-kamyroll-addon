@@ -127,7 +127,6 @@ export default {
             // get other type crunchyroll slug
             id = res.data?.data?.map(link => {
                 // https://beta.crunchyroll.com/series/G4PH0WXVJ/spy-x-family
-                console.log(link?.attributes?.url, link?.attributes?.url?.match(/crunchyroll.com\/series\/([^/]+)/));
                 return link?.attributes?.url?.match(/crunchyroll.com\/series\/([^/]+)/)?.[1];
             }).find(value => !!value);
         }
