@@ -1,6 +1,8 @@
 import axios from 'axios';
 import localeEmoji from 'locale-emoji';
 
+axios.defaults.timeout = 5000;
+
 const DEVICE_TYPE = 'com.service.data';
 const DEVICE_ID = 'whatvalueshouldbeforweb';
 const STREAM_TYPE = 'adaptive_hls'; // adaptive_hls, adaptive_dash, drm_adaptive_dash
@@ -51,20 +53,30 @@ export default {
         season = Number(season);
         ep = Number(ep);
 
+        let kitsuId = this.hasKitsuMapping(imdbId)
         // has no kitsu mapping
-        if (!this.hasKitsuMapping(imdbId)) {
+        if (!kitsuId) {
             console.log('has no kitsu mapping');
             return { kitsuId: null, ep: null };
         }
 
         // get kitsu mapping
-        let res = await axios.get(`https://anime-kitsu.strem.fun/meta/${type}/${imdbId}.json`);
+        console.log(type, imdbId);
+        let res;
+        try {
+            res = await axios.get(`https://anime-kitsu.strem.fun/meta/${type}/${imdbId}.json`);
+        } catch (e) {
+            console.error(e.message);
+
+            // fallback if kitsu addon api times out
+            return { kitsuId, ep };
+        }
 
         for (const episode of res.data?.meta?.videos || []) {
             if (episode.season === season && episode.number === ep) {
                 return {
-                    kitsuId: Number(episode.kitsu_id),
-                    ep: episode.kitsuEpisode,
+                    kitsuId: Number(episode.kitsu_id) || null,
+                    ep: episode.kitsuEpisode || null,
                 }
             }
         }
@@ -110,6 +122,16 @@ export default {
                 return link?.attributes?.url?.match(/crunchyroll.com\/([^\/]+)\/?$/i)?.[1];
             }).find(value => !!value);
         }
+
+        if (!id) {
+            // get other type crunchyroll slug
+            id = res.data?.data?.map(link => {
+                // https://beta.crunchyroll.com/series/G4PH0WXVJ/spy-x-family
+                console.log(link?.attributes?.url, link?.attributes?.url?.match(/crunchyroll.com\/series\/([^/]+)/));
+                return link?.attributes?.url?.match(/crunchyroll.com\/series\/([^/]+)/)?.[1];
+            }).find(value => !!value);
+        }
+
 
         if (!id) {
             // get funimation slug
