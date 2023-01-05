@@ -8,7 +8,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import kamyroll from './kamyroll.js'
 import { fileURLToPath } from 'url';
-import { hasImdbMapping, ImdbToKitsu } from './lib/metadataEnrich'
+import { ImdbToKitsu, hasImdbMapping } from './lib/metadataEnrich.js'
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -60,7 +60,7 @@ app.get('/manifest.json', function (req, res) {
 app.get('/stream/:type/:id/:extra?.json', async function (req, res) {
     //res.setHeader('Cache-Control', 'max-age=86400,stale-while-revalidate=86400,stale-if-error=86400,public');
     res.setHeader('content-type', 'application/json');
-    const [type, id, extra] = req.params
+    const {type, id, extra} = req.params
 
     if (id.match(/^tt\d+:\d+:\d+$/)) {
         if (!hasImdbMapping(id.split(":")[0])) {
