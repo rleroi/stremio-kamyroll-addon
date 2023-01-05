@@ -57,7 +57,6 @@ app.get('/manifest.json', function(req, res) {
 
 // streams
 app.get('/stream/:type/:id/:extra?.json', async function(req, res) {
-    //res.setHeader('Cache-Control', 'max-age=86400,stale-while-revalidate=86400,stale-if-error=86400,public');
     res.setHeader('content-type', 'application/json');
 
     let imdbId, kitsuId, season, ep;
@@ -66,7 +65,7 @@ app.get('/stream/:type/:id/:extra?.json', async function(req, res) {
     if (req.params.id.startsWith('tt')) {
         [imdbId, season, ep] = req.params.id.split(':');
         ({kitsuId, ep} = await kamyroll.getKitsuId(imdbId, req.params.type, season, ep));
-        console.log('imdb to kitsu id and ep', kitsuId, ep);
+        //console.log('imdb to kitsu id and ep', kitsuId, ep);
     } else {
         [kitsuId, kitsuId, ep] = req.params.id.split(':');
     }
@@ -83,9 +82,11 @@ app.get('/stream/:type/:id/:extra?.json', async function(req, res) {
         ep: ep,
     });
 
-    console.log('find kitsu id ', kitsuId);
-
     const streams = await kamyroll.getStreams(kitsuId, ep);
+
+    if (streams?.length && process.env.NODE_ENV !== 'local') {
+        res.setHeader('Cache-Control', 'max-age=86400,stale-while-revalidate=86400,stale-if-error=86400,public');
+    }
 
     res.send({
         streams: streams,

@@ -124,7 +124,7 @@ export default {
         }
 
         if (!id) {
-            // get other type crunchyroll slug
+            // get crunchyroll id
             id = res.data?.data?.map(link => {
                 // https://beta.crunchyroll.com/series/G4PH0WXVJ/spy-x-family
                 return link?.attributes?.url?.match(/crunchyroll.com\/series\/([^/]+)/)?.[1];
@@ -133,7 +133,7 @@ export default {
 
 
         if (!id) {
-            // get funimation slug
+            // get funimation id
             id = res.data?.data?.map(link => {
                 // https://www.funimation.com/shows/xxx/videos/episodes
                 // https://www.funimation.com/shows/xxx/
