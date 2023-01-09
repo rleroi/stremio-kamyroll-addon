@@ -147,13 +147,7 @@ export default {
     async refreshToken() {
         let res;
         try {
-            res = await axios.post('https://api.kamyroll.tech/auth/v1/token',
-                {
-                    "access_token": process.env.ACCESS_TOKEN,
-                    "device_type": DEVICE_TYPE,
-                    "device_id": DEVICE_ID,
-                },
-            );
+            res = await axios.get(`https://api.kamyroll.tech/auth/v1/token?access_token=${process.env.ACCESS_TOKEN}&device_type=${DEVICE_TYPE}&device_id=${DEVICE_ID}`);
         } catch(e) {
             console.error('Failed to get token: ' + e.message);
             console.log(e.response.data);
