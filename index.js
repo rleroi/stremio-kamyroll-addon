@@ -72,19 +72,20 @@ app.get('/stream/:type/:id/:extra?.json', async function(req, res) {
 
     const streams = await kamyroll.getStreams(kitsuId, ep);
 
-    if (streams?.length && process.env.NODE_ENV !== 'local') {
-        mixpanel && mixpanel.track('stream', {
-            ip: req.ip,
-            distinct_id: req.ip.replace(/\.|:/g, 'Z'),
-            stream_type: req.params.type,
-            stream_id: req.params.id,
-            stream_extra: req.params?.extra,
-            kitsu_id: kitsuId,
-            imdb_id: imdbId,
-            season: season,
-            ep: ep,
-        });
+    mixpanel && mixpanel.track('stream', {
+        ip: req.ip,
+        distinct_id: req.ip.replace(/\.|:/g, 'Z'),
+        stream_type: req.params.type,
+        stream_id: req.params.id,
+        stream_extra: req.params?.extra,
+        kitsu_id: kitsuId,
+        imdb_id: imdbId,
+        season: season,
+        ep: ep,
+        stream_count: streams?.length
+    });
 
+    if (streams?.length && process.env.NODE_ENV !== 'local') {
         res.setHeader('Cache-Control', 'max-age=86400,stale-while-revalidate=86400,stale-if-error=86400,public');
     }
 
