@@ -1,3 +1,4 @@
 node_modules
 .env
 app.log
+dist/app.log
