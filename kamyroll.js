@@ -171,7 +171,7 @@ export default {
             logError(e.message);
             console.log(e.response?.data);
 
-            return;
+            return [];
         }
 
         let episodes = [];
@@ -322,14 +322,14 @@ export default {
         const episodes = await this.getEpisodes(seasonId, epNumber, titles, 'crunchyroll');
         console.log('episodes', episodes?.length);
 
-        let result, streams = [], subtitles;
+        let streams = [], subtitles = [], result = {};
         if (!episodes?.length) {
             // maybe its a movie
             result = await this.getStreamsAndSubtitles(seasonId, 'crunchyroll');
-            streams = result?.streams.map(stream => {
+            streams = result?.streams?.map(stream => {
                 return {...stream, ep: {title: 'Movie', episode_number: 1}};
             });
-            subtitles = result?.subtitles;
+            subtitles = result?.subtitles || [];
         } else {
             // get streams for each episode
             for(const ep of episodes) {
@@ -339,7 +339,7 @@ export default {
                 });
                 streams = [...streams, ...moreStreams];
                 if (!subtitles) {
-                    subtitles = result?.subtitles;
+                    subtitles = result?.subtitles || [];
                 }
             }
         }
@@ -350,7 +350,7 @@ export default {
             return [];
         }
 
-        subtitles = subtitles.map((sub, i) => {
+        subtitles = subtitles?.map((sub, i) => {
             return {
                 id: i,
                 url: sub.url,
