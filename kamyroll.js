@@ -27,7 +27,7 @@ export default {
             res = await axios.get('https://raw.githubusercontent.com/TheBeastLT/stremio-kitsu-anime/master/static/data/imdb_mapping.json');
         } catch(e) {
             console.error(e.message);
-            console.log(e.response.data);
+            console.log(e.response?.data);
 
             return;
         }
@@ -90,7 +90,7 @@ export default {
             res = await axios.get(`https://kitsu.io/api/edge/anime/${kitsuId}`);
         } catch(e) {
             console.error(e.message);
-            console.log(e.response.data);
+            console.log(e.response?.data);
 
             return [];
         }
@@ -104,7 +104,7 @@ export default {
             res = await axios.get(`https://kitsu.io/api/edge/anime/${kitsuId}/streaming-links`);
         } catch(e) {
             console.error(e.message);
-            console.log(e.response.data);
+            console.log(e.response?.data);
 
             return;
         }
@@ -150,7 +150,7 @@ export default {
             res = await axios.get(`https://api.kamyroll.tech/auth/v1/token?access_token=${process.env.ACCESS_TOKEN}&device_type=${DEVICE_TYPE}&device_id=${DEVICE_ID}`);
         } catch(e) {
             console.error('Failed to get token: ' + e.message);
-            console.log(e.response.data);
+            console.log(e.response?.data);
 
             return;
         }
@@ -168,7 +168,7 @@ export default {
             });
         } catch(e) {
             console.error(e.message);
-            console.log(e.response.data);
+            console.log(e.response?.data);
 
             return;
         }
@@ -220,7 +220,7 @@ export default {
             });
         } catch(e) {
             console.error(e.message);
-            console.log(e.response.data);
+            console.log(e.response?.data);
 
             return {};
         }
