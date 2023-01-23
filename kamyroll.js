@@ -326,6 +326,9 @@ export default {
         if (!episodes?.length) {
             // maybe its a movie
             result = await this.getStreamsAndSubtitles(seasonId, 'crunchyroll');
+            if (!result?.streams?.length) {
+                return [];
+            }
             streams = result?.streams?.map(stream => {
                 return {...stream, ep: {title: 'Movie', episode_number: 1}};
             });
