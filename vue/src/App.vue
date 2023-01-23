@@ -10,7 +10,7 @@
                     <h1 class="my-3 font-semibold text-4xl">Rab1t's Addons</h1>
                     <p class="pr-3 text-sm opacity-75">Please donate to keep this addon alive.</p>
 
-                    <img class="my-8 w-full rounded-3xl" src="/logo.png" />
+                    <img class="my-8 w-full rounded-3xl" style="max-width: 265px;" src="/logo.png" />
 
                     <v-button class="mb-3 py-2" @click="openUrl('https://ko-fi.com/rab1t')">
                         <img class="w-8 mr-2" src="https://storage.ko-fi.com/cdn/brandasset/kofi_s_logo_nolabel.png" />
