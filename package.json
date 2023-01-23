@@ -7,7 +7,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon index.js",
-    "start": "node index.js 2>&1 | tee vue/dist/app.log"
+    "start": "nodemon -x '(node index.js 2>&1 | tee -a vue/dist/app.log) || touch index.js'"
   },
   "author": "",
   "license": "ISC",
@@ -18,9 +18,9 @@
     "express": "^4.18.2",
     "locale-emoji": "^0.3.0",
     "mixpanel": "^0.17.0",
-    "swagger-stats": "^0.99.4"
+    "swagger-stats": "^0.99.4",
+    "nodemon": "^2.0.20"
   },
   "devDependencies": {
-    "nodemon": "^2.0.20"
   }
 }
