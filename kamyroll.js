@@ -1,7 +1,7 @@
 import axios from 'axios';
 import localeEmoji from 'locale-emoji';
 
-axios.defaults.timeout = 5000;
+axios.defaults.timeout = 30000;
 
 const DEVICE_TYPE = 'com.service.data';
 const DEVICE_ID = 'whatvalueshouldbeforweb';
@@ -228,7 +228,78 @@ export default {
         return res.data || {};
     },
 
-    async getStreams(kitsuId, epNumber) {
+    async getStreamsByImdbId(imdbId, season, ep) {
+        // get vrvId via watchub
+        let res;
+        try {
+            res = await axios.get(`https://watchhub.strem.io/stream/series/${imdbId}%3A${season}%3A${ep}.json?c=US`);
+        } catch (e) {
+            console.log('something went wrong', imdbId, season, ep, `https://watchhub.strem.io/stream/series/${imdbId}%3A${season}%3A${ep}.json?c=US`);
+            console.error(e.message);
+
+            return [];
+        }
+
+        let vrvResult = res.data?.streams?.find(result => result?.name === 'VRV');
+        if (!vrvResult) {
+            console.log('no vrv result', imdbId, season, ep, `https://watchhub.strem.io/stream/series/${imdbId}%3A${season}%3A${ep}.json?c=US`);
+            console.log(res.data?.streams?.map(stream => stream?.name));
+            return [];
+        }
+
+        let vrvId = vrvResult?.externalUrl?.match(/([a-z0-9]+)$/ig);
+        let result = await this.getStreamsAndSubtitles(vrvId, 'crunchyroll');
+        let streams = result?.streams;
+        let subtitles = result?.subtitles;
+
+        console.log('streams', streams?.length);
+
+        if (!streams?.length) {
+            return [];
+        }
+
+        subtitles = subtitles.map((sub, i) => {
+            return {
+                id: i,
+                url: sub.url,
+                lang: sub.locale,
+            };
+        })//.filter(val => !!val);
+
+        return streams.map((stream) => {
+            let subs = '';
+            if (LOCALES?.[stream.hardsub_locale]) {
+                subs = `Hardsub: ${LOCALES[stream.hardsub_locale]}`;
+            } else if(stream.hardsub_locale) {
+                subs = `Hardsub: ${localeEmoji(stream.hardsub_locale)} ${stream.hardsub_locale}`;
+            }
+
+            if (!subs) {
+                subs = subtitles.length ? 'Multi-Sub: ' + result.subtitles.map((sub) => {
+                    return FLAG_ONLY?.[sub.locale] || (sub.locale ? localeEmoji(sub.locale) : '');
+                }).join(' ') : 'No subs'
+            }
+
+            let audio = '';
+            if (LOCALES?.[stream.audio_locale]) {
+                audio = LOCALES[stream.audio_locale];
+            } else if(stream.audio_locale) {
+                audio = `${localeEmoji(stream.audio_locale)} ${stream.audio_locale}`;
+            }
+
+            return {
+                url: stream.url,
+                name: 'Crunchyroll',
+                description: `Audio: ${audio}, ${subs}`,
+                subtitles: subtitles,
+                behaviorHints: {
+                    bingeGroup: `crunchyroll-${audio}-${subs}`,
+                },
+            };
+        }) || [];
+    },
+
+    async getStreamsByKitsuId(kitsuId, epNumber) {
         if (!kitsuId) {
             return [];
         }
@@ -254,10 +325,9 @@ export default {
         if (!episodes?.length) {
             // maybe its a movie
             result = await this.getStreamsAndSubtitles(seasonId, 'crunchyroll');
-            streams.map(stream => {
+            streams = result?.streams.map(stream => {
                 return {...stream, ep: {title: 'Movie', episode_number: 1}};
             });
-            streams = result?.streams;
             subtitles = result?.subtitles;
         } else {
             // get streams for each episode

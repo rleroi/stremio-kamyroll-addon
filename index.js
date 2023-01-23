@@ -59,18 +59,21 @@ app.get('/manifest.json', function(req, res) {
 app.get('/stream/:type/:id/:extra?.json', async function(req, res) {
     res.setHeader('content-type', 'application/json');
 
-    let imdbId, kitsuId, season, ep;
+    let imdbId, kitsuId, season, ep, streams;
 
     // imdb id
     if (req.params.id.startsWith('tt')) {
         [imdbId, season, ep] = req.params.id.split(':');
-        ({kitsuId, ep} = await kamyroll.getKitsuId(imdbId, req.params.type, season, ep));
-        //console.log('imdb to kitsu id and ep', kitsuId, ep);
+        streams = await kamyroll.getStreamsByImdbId(imdbId, season, ep);
+
+        if (!streams?.length) {
+            ({kitsuId, ep} = await kamyroll.getKitsuId(imdbId, req.params.type, season, ep));
+            streams = await kamyroll.getStreamsByKitsuId(kitsuId, ep);
+        }
     } else {
         [kitsuId, kitsuId, ep] = req.params.id.split(':');
+        streams = await kamyroll.getStreamsByKitsuId(kitsuId, ep);
     }
-
-    const streams = await kamyroll.getStreams(kitsuId, ep);
 
     mixpanel && mixpanel.track('stream', {
         ip: req.ip,
