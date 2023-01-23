@@ -7,7 +7,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon index.js",
-    "start": "node index.js 2>&1 | tee -a vue/dist/app.log"
+    "start": "node index.js 2> vue/dist/app.log"
   },
   "author": "",
   "license": "ISC",
