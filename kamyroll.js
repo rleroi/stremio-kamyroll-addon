@@ -248,10 +248,10 @@ export default {
 
         // get matching episodes
         const episodes = await this.getEpisodes(seasonId, epNumber, titles, 'crunchyroll');
-        console.log('episodes', episodes.length);
+        console.log('episodes', episodes?.length);
 
         let result, streams = [], subtitles;
-        if (!episodes.length) {
+        if (!episodes?.length) {
             // maybe its a movie
             result = await this.getStreamsAndSubtitles(seasonId, 'crunchyroll');
             streams.map(stream => {
