@@ -16,14 +16,14 @@ const app = express();
 app.set('trust proxy', true);
 app.use(cors());
 app.use(express.static(path.join(__dirname, 'vue', 'dist')));
-app.use(swStats.getMiddleware({
-    name: 'pw.ers.kamyroll',
-    version: process.env.npm_package_version,
-    authentication: true,
-    onAuthenticate: (req, username, password) => {
-        return process.env.USERNAME === username && process.env.PASSWORD === password;
-    }
-}));
+// app.use(swStats.getMiddleware({
+//     name: 'pw.ers.kamyroll',
+//     version: process.env.npm_package_version,
+//     authentication: true,
+//     onAuthenticate: (req, username, password) => {
+//         return process.env.USERNAME === username && process.env.PASSWORD === password;
+//     }
+// }));
 
 let mixpanel = null;
 if(process.env.MIXPANEL_KEY) {
